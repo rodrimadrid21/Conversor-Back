@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35122.118
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Conversor_Monedas_Api", "Conversor_Monedas_Api.csproj", "{3F52FA94-57EB-4359-9198-B8AF38B24BEC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F52FA94-57EB-4359-9198-B8AF38B24BEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F52FA94-57EB-4359-9198-B8AF38B24BEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F52FA94-57EB-4359-9198-B8AF38B24BEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F52FA94-57EB-4359-9198-B8AF38B24BEC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F9408C42-3B93-4017-BE93-FCCA151FEC84}
+	EndGlobalSection
+EndGlobal
