@@ -10,6 +10,7 @@ using Conversor_Monedas_Api.Interfaces.services;
 using Microsoft.OpenApi.Models;
 using Conversor_Monedas_Api.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,8 +40,7 @@ builder.Services.AddScoped<IMonedaService, MonedaService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<ISuscripcionService, SuscripcionService>();
 
-// Configurar JWT Authentication
-// Configuración de autenticación JWT
+// conf JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -53,6 +53,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+
+        // Configuración de eventos de JwtBearer
+        options.Events = new JwtBearerEvents //endpoint
+        {
+            OnTokenValidated = context =>
+            {
+                var claimsPrincipal = context.Principal;
+
+                // Validar que el reclamo "sub" (userId) esté presente
+                if (claimsPrincipal.FindFirst("sub") == null)
+                {
+                    throw new SecurityTokenException("El token no contiene el ID del usuario ('sub').");
+                }
+
+                // Validar que el rol esté presente
+                if (claimsPrincipal.FindFirst("role") == null)
+                {
+                    throw new SecurityTokenException("El token no contiene el rol del usuario ('role').");
+                }
+
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                // Manejar errores de autenticación
+                Console.WriteLine($"Authentication Failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -124,6 +153,42 @@ app.UseHttpsRedirection();
 
 // Habilitar CORS
 app.UseCors("AllowAllOrigins");
+
+app.Use(async (context, next) => //endpoint
+{
+    // Punto de interrupción aquí para analizar antes de la autenticación
+    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+    Console.WriteLine($"Authorization Header: {authHeader}");
+
+    if (string.IsNullOrEmpty(authHeader))
+    {
+        Console.WriteLine("No Authorization header found.");
+    }
+    else
+    {
+        // Validar que el formato sea correcto (Bearer <token>)
+        if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+            Console.WriteLine($"Token: {token}");
+        }
+        else
+        {
+            Console.WriteLine("Authorization header is not in Bearer format.");
+        }
+    }
+
+    await next.Invoke();
+
+    // Punto de interrupción aquí para analizar después de la autenticación/autorization
+    Console.WriteLine($"Response Status Code: {context.Response.StatusCode}");
+
+    // Verifica si el código de estado es 401 (no autorizado)
+    if (context.Response.StatusCode == 401)
+    {
+        Console.WriteLine("Authentication failed. Invalid or missing token.");
+    }
+});
 
 app.UseAuthentication();// Middleware de autenticación
 

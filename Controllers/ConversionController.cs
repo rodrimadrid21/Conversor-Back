@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Conversor_Monedas_Api.Controllers
 {
-    [Authorize] // Esto asegura que todos los métodos del controlador requieren autorización
+    //[Authorize] // Esto asegura que todos los métodos del controlador requieren autorización
     [Route("api/[controller]")]
     [ApiController]
     public class ConversionController : ControllerBase
