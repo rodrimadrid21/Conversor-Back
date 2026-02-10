@@ -20,17 +20,17 @@ namespace Conversor_Monedas_Api.Controllers
 
         // Endpoint para obtener todas las suscripciones
         [HttpGet("All")]
-        public IActionResult GetAllSubscriptions()
+        public async Task<IActionResult> GetAll()
         {
-            var subscriptions = _suscripcionService.GetAllSubscriptions();
+            var subscriptions = await _suscripcionService.GetAllSubscriptionsAsync();
             return Ok(subscriptions);
         }
 
         // Endpoint para obtener una suscripción por tipo
-        [HttpGet("{type}")]
-        public IActionResult GetSubscriptionByType(SuscripcionEnum type)
+        [HttpGet("ByType/{type}")]
+        public async Task<IActionResult> GetByType(SuscripcionEnum type)
         {
-            var subscription = _suscripcionService.GetSubscriptionByType(type);
+            var subscription = await _suscripcionService.GetSubscriptionByTypeAsync(type);
             if (subscription == null)
                 return NotFound(new { Message = "Tipo de suscripción no encontrado." });
 

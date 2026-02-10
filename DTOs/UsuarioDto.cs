@@ -17,7 +17,7 @@ namespace Conversor_Monedas_Api.DTOs
 
         public UsuarioEnum Role { get; set; } = UsuarioEnum.user; // Rol del usuario
 
-        public SuscripcionEnum Type { get; set; } // Tipo de suscripción
+        public SuscripcionEnum Type { get; set; } = SuscripcionEnum.Free;// Tipo de suscripción
 
         public DateTime SubscriptionStartDate { get; set; } = DateTime.UtcNow; // Fecha de inicio de la suscripción
     }

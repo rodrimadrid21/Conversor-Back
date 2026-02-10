@@ -2,11 +2,14 @@
 using Conversor_Monedas_Api.Entities;
 using Conversor_Monedas_Api.Enum;
 using Conversor_Monedas_Api.Interfaces.services;
+using Conversor_Monedas_Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversor_Monedas_Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsuarioController : ControllerBase
@@ -24,12 +27,13 @@ namespace Conversor_Monedas_Api.Controllers
             return Ok(users);
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
         public IActionResult RegisterUser([FromBody] UsuarioDto userDto)
         {
             if (string.IsNullOrEmpty(userDto.UserName) || string.IsNullOrEmpty(userDto.Password))
             {
-                return BadRequest(new ResRegister { Mensaje = "El nombre de usuario y la contraseña son obligatorios." });
+                return BadRequest(new RegisterResponseDto { Mensaje = "El nombre de usuario y la contraseña son obligatorios." });
             }
 
             // Llama al servicio para registrar al usuario
@@ -37,11 +41,11 @@ namespace Conversor_Monedas_Api.Controllers
 
             if (userId <= 0)
             {
-                return BadRequest(new ResRegister { Mensaje = "Error al registrar el usuario." });
+                return BadRequest(new RegisterResponseDto { Mensaje = "Error al registrar el usuario." });
             }
 
             // Retorna mensaje de éxito
-            return Ok(new ResRegister { Mensaje = "Registro exitoso." });
+            return Ok(new RegisterResponseDto { Mensaje = "Registro exitoso." });
         }
 
         // Obtener usuario por ID
@@ -57,7 +61,8 @@ namespace Conversor_Monedas_Api.Controllers
         }
 
         // Obtener usuario por nombre de usuario
-        [HttpGet("{username}")]
+        // 🔥 FIX aplicado acá
+        [HttpGet("ByUsername/{username}")]
         public IActionResult GetUserByUsername(string username)
         {
             var user = _userService.GetUserByUsername(username);
@@ -100,15 +105,29 @@ namespace Conversor_Monedas_Api.Controllers
         }
 
         // Actualizar la suscripción del usuario
-        [HttpPut("Subscription/{userId}")]
-        public IActionResult UpdateUserSubscription(int userId, [FromBody] SuscripcionEnum newType)
+        [HttpPost("activar-plan")]
+        public IActionResult ActivarPlan([FromBody] SuscripcionDto dto)
         {
-            bool updated = _userService.UpdateUserSubscription(userId, newType);
-            if (!updated)
+            try
             {
-                return NotFound(new { Message = "Usuario no encontrado para actualizar la suscripción." });
+                // Sacamos el userId del token
+                int userId = _userService.GetUserIdFromContext(HttpContext.User);
+
+                bool ok = _userService.UpdateUserSubscription(userId, dto.Type);
+
+                if (!ok)
+                    return NotFound(new { message = "Usuario no encontrado" });
+
+                return Ok(new { message = $"Suscripción actualizada a {dto.Type}" });
             }
-            return Ok(new { Message = "Suscripción del usuario actualizada exitosamente." });
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new { message = "Usuario no autenticado" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }

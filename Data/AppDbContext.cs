@@ -1,14 +1,12 @@
 ﻿using Conversor_Monedas_Api.Entities;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conversor_Monedas_Api.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options) // Pasa las opciones al constructor base
+        public AppDbContext(DbContextOptions<AppDbContext> options) //constructor. options = config
+            : base(options) // Pasa la config al constructor base (dbcontext)
         {
         }
         public DbSet<Usuario> Users { get; set; }

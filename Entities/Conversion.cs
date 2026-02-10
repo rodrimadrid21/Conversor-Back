@@ -26,7 +26,7 @@ namespace Conversor_Monedas_Api.Entities
         public DateTime FechaConversion { get; set; }  // Fecha de la conversión
 
         // Relaciones con otras entidades
-        [ForeignKey("UserId")]
+        [ForeignKey("UsuarioId")]
         public required virtual Usuario Usuario { get; set; }
     }
 }

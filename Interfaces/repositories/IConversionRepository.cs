@@ -13,6 +13,12 @@ namespace Conversor_Monedas_Api.Interfaces.repositories
         Task<decimal> GetIdByCurrency(string codeCurrency);
 
         // Registrar una nueva conversión
-        int AddConversion(Conversion conversion); 
+        int AddConversion(Conversion conversion);
+
+        // 🔹 Nuevo método para el límite mensual
+        int CountUserConversionsSince(int userId, DateTime fromDate);
+
+        // 🔹 NUEVO: fecha de la conversión más vieja dentro de la ventana (desde fromDate)
+        DateTime? GetOldestConversionDateSince(int userId, DateTime fromDate);
     }
 }

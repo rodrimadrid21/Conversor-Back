@@ -1,31 +1,30 @@
-using Conversor_Monedas_Api.Repositories;
-using Conversor_Monedas_Api.Services;
-using Conversor_Monedas_Api.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using Conversor_Monedas_Api.Data;
 using Conversor_Monedas_Api.Interfaces.repositories;
 using Conversor_Monedas_Api.Interfaces.services;
+using Conversor_Monedas_Api.Repositories;
+using Conversor_Monedas_Api.Services;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Conversor_Monedas_Api.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
+
+using System.Text;              // Encoding
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar CORS
+// CORS (Angular)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins",
-        builder => builder
-            .WithOrigins("http://localhost:4200") // URL del frontend
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+    options.AddPolicy("AllowFrontend", policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyMethod()
+              .AllowAnyHeader());
 });
 
-// Configuración de Entity Framework y la base de datos (SQLite)
-builder.Services.AddDbContext<AppDbContext>(options =>
+// EF Core + SQLite
+builder.Services.AddDbContext<AppDbContext>(options =>//addDbContext registra DbContext como scooped
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Repositorios
@@ -40,92 +39,73 @@ builder.Services.AddScoped<IMonedaService, MonedaService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<ISuscripcionService, SuscripcionService>();
 
-// conf JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+// JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)//define bearer jwt
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;//evita q .net remapee claims
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
+            ValidateIssuerSigningKey = true,//exige firma valida
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
 
-        // Configuración de eventos de JwtBearer
-        options.Events = new JwtBearerEvents //endpoint
-        {
-            OnTokenValidated = context =>
-            {
-                var claimsPrincipal = context.Principal;
+            // - seguridad, cualquier iss y aud
+            ValidateIssuer = false,
+            ValidateAudience = false,
 
-                // Validar que el reclamo "sub" (userId) esté presente
-                if (claimsPrincipal.FindFirst("sub") == null)
-                {
-                    throw new SecurityTokenException("El token no contiene el ID del usuario ('sub').");
-                }
-
-                // Validar que el rol esté presente
-                if (claimsPrincipal.FindFirst("role") == null)
-                {
-                    throw new SecurityTokenException("El token no contiene el rol del usuario ('role').");
-                }
-
-                return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
-            {
-                // Manejar errores de autenticación
-                Console.WriteLine($"Authentication Failed: {context.Exception.Message}");
-                return Task.CompletedTask;
-            }
+            ClockSkew = TimeSpan.Zero
         };
     });
 
-// Configuración de Swagger para manejar JWT
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Por favor ingrese un token JWT con el formato 'Bearer {token}'",
-        Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey
-    });
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
+// habilita autorizacion
+builder.Services.AddAuthorization();
 
-// Agregar controladores
+// Controllers (con Authorize global)
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter());
 });
 
+// permite que swagger reconozca los endpoints
 builder.Services.AddEndpointsApiExplorer();
 
+// Swagger + Bearer (agrega el boton Authorize en swagger)
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { 
+        Title = "Conversor de Monedas API", 
+        Version = "v1" 
+    });
 
-//builder.Services.AddAuthorization(); // Agrega servicios de autorización
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Ingrese el token JWT con formato: Bearer {token}",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
 
-
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+//construye el host y la app
 var app = builder.Build();
 
-// Configuración de la tubería de solicitud HTTP
+//pipeline de middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -136,68 +116,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+//middlewares
+app.UseHttpsRedirection();//redirige http a https
 
-//app.Use(async (context, next) =>
-//{
-//    if (context.Request.Method == "OPTIONS")
-//    {
-//        context.Response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:4200");
-//        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-//        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
-//        context.Response.StatusCode = 204; // Sin contenido
-//        return;
-//    }
-//    await next();
-//});
+app.UseCors("AllowFrontend");
 
-// Habilitar CORS
-app.UseCors("AllowAllOrigins");
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.Use(async (context, next) => //endpoint
-{
-    // Punto de interrupción aquí para analizar antes de la autenticación
-    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-    Console.WriteLine($"Authorization Header: {authHeader}");
+app.MapControllers();//mapea rutas a controllers
 
-    if (string.IsNullOrEmpty(authHeader))
-    {
-        Console.WriteLine("No Authorization header found.");
-    }
-    else
-    {
-        // Validar que el formato sea correcto (Bearer <token>)
-        if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            var token = authHeader.Substring("Bearer ".Length).Trim();
-            Console.WriteLine($"Token: {token}");
-        }
-        else
-        {
-            Console.WriteLine("Authorization header is not in Bearer format.");
-        }
-    }
-
-    await next.Invoke();
-
-    // Punto de interrupción aquí para analizar después de la autenticación/autorization
-    Console.WriteLine($"Response Status Code: {context.Response.StatusCode}");
-
-    // Verifica si el código de estado es 401 (no autorizado)
-    if (context.Response.StatusCode == 401)
-    {
-        Console.WriteLine("Authentication failed. Invalid or missing token.");
-    }
-});
-
-app.UseAuthentication();// Middleware de autenticación
-
-// Habilitar autorización
-app.UseAuthorization();// Middleware de autorización
-
-// Mapear los controladores
-app.MapControllers();
-
-// Ejecutar la aplicación
-app.Run();
-
+app.Run();//inicia la app

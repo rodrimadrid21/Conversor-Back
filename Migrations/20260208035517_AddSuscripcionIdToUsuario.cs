@@ -5,24 +5,23 @@
 namespace Conversor_Monedas_Api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddConversionCountToUsuario : Migration
+    public partial class AddSuscripcionIdToUsuario : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "ConversionCount",
+                name: "SuscripcionId",
                 table: "Users",
                 type: "INTEGER",
-                nullable: false,
-                defaultValue: 0);
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ConversionCount",
+                name: "SuscripcionId",
                 table: "Users");
         }
     }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Conversor_Monedas_Api.Migrations
 {
     /// <inheritdoc />
-    public partial class InitalMigration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -53,8 +53,10 @@ namespace Conversor_Monedas_Api.Migrations
                     UserName = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     Password = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
                     Role = table.Column<int>(type: "INTEGER", nullable: false),
+                    Type = table.Column<int>(type: "INTEGER", nullable: false),
                     SubscriptionStartDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false)
+                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ConversionCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -72,23 +74,23 @@ namespace Conversor_Monedas_Api.Migrations
                     MonedaDestino = table.Column<string>(type: "TEXT", nullable: false),
                     MontoOriginal = table.Column<decimal>(type: "TEXT", nullable: false),
                     MontoConvertido = table.Column<decimal>(type: "TEXT", nullable: false),
-                    FechaConversion = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UserId = table.Column<int>(type: "INTEGER", nullable: true)
+                    FechaConversion = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Conversion", x => x.ConversionId);
                     table.ForeignKey(
-                        name: "FK_Conversion_Users_UserId",
-                        column: x => x.UserId,
+                        name: "FK_Conversion_Users_UsuarioId",
+                        column: x => x.UsuarioId,
                         principalTable: "Users",
-                        principalColumn: "UserId");
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Conversion_UserId",
+                name: "IX_Conversion_UsuarioId",
                 table: "Conversion",
-                column: "UserId");
+                column: "UsuarioId");
         }
 
         /// <inheritdoc />

@@ -15,41 +15,48 @@ namespace Conversor_Monedas_Api.Repositories
             _context = context;
         }
 
-        public List<Suscripcion> GetAllSubscriptions()
+        // Obtener todas las suscripciones (catálogo)
+        public async Task<List<Suscripcion>> GetAllSubscriptionsAsync()
         {
-            return _context.Suscripcion.ToList();
+            return await _context.Suscripcion.ToListAsync();
         }
 
-        public Suscripcion GetSubscriptionByType(SuscripcionEnum type)
+        // Obtener una suscripción por tipo (Free / Trial / Pro)
+        public async Task<Suscripcion?> GetSubscriptionByTypeAsync(SuscripcionEnum type)
         {
-            return _context.Suscripcion.FirstOrDefault(s => s.Tipo == type);
+            return await _context.Suscripcion
+                .FirstOrDefaultAsync(s => s.Tipo == type);
         }
 
-        public async Task<Suscripcion> GetByIdAsync(int id)
+        // Obtener suscripción por Id
+        public async Task<Suscripcion?> GetByIdAsync(int id)
         {
             return await _context.Suscripcion.FindAsync(id);
         }
 
+        // Crear una nueva suscripción (normalmente solo para seed / admin)
         public async Task AddAsync(Suscripcion suscripcion)
         {
             await _context.Suscripcion.AddAsync(suscripcion);
             await _context.SaveChangesAsync();
         }
 
+        // Actualizar una suscripción (ej: cambiar límites)
         public async Task UpdateAsync(Suscripcion suscripcion)
         {
             _context.Suscripcion.Update(suscripcion);
             await _context.SaveChangesAsync();
         }
 
+        // Eliminar una suscripción (raro en la práctica, pero queda)
         public async Task DeleteAsync(int id)
         {
             var suscripcion = await GetByIdAsync(id);
-            if (suscripcion != null)
-            {
-                _context.Suscripcion.Remove(suscripcion);
-                await _context.SaveChangesAsync();
-            }
+            if (suscripcion == null)
+                return;
+
+            _context.Suscripcion.Remove(suscripcion);
+            await _context.SaveChangesAsync();
         }
     }
 }

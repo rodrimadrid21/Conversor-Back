@@ -12,7 +12,7 @@ namespace Conversor_Monedas_Api.Interfaces.services
         //public int AddConversion(Conversion conversion);
         ConversionDto ExecuteConversion(int userId, string fromCurrency, string toCurrency, decimal amount);
 
-        
+
 
     }
 }

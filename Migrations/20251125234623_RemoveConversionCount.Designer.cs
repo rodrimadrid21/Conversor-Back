@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Conversor_Monedas_Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241125054106_AddConversionCountToUsuario")]
-    partial class AddConversionCountToUsuario
+    [Migration("20251125234623_RemoveConversionCount")]
+    partial class RemoveConversionCount
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,15 +43,12 @@ namespace Conversor_Monedas_Api.Migrations
                     b.Property<decimal>("MontoOriginal")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("UsuarioId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ConversionId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Conversion");
                 });
@@ -94,7 +91,7 @@ namespace Conversor_Monedas_Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("MaximoConversiones")
+                    b.Property<int?>("MaximoConversiones")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Tipo")
@@ -109,9 +106,6 @@ namespace Conversor_Monedas_Api.Migrations
                 {
                     b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ConversionCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("FirstName")
@@ -138,6 +132,9 @@ namespace Conversor_Monedas_Api.Migrations
                     b.Property<DateTime>("SubscriptionStartDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -152,7 +149,9 @@ namespace Conversor_Monedas_Api.Migrations
                 {
                     b.HasOne("Conversor_Monedas_Api.Entities.Usuario", "Usuario")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Usuario");
                 });

@@ -17,9 +17,10 @@ namespace Conversor_Monedas_Api.Services
             _subscriptionRepository = subscriptionRepository;
         }
 
-        public SuscripcionDto GetSubscriptionByType(SuscripcionEnum type)
+        public async Task<SuscripcionDto?> GetSubscriptionByTypeAsync(SuscripcionEnum type)
         {
-            var subscription = _subscriptionRepository.GetSubscriptionByType(type);
+            var subscription = await _subscriptionRepository.GetSubscriptionByTypeAsync(type);
+
             if (subscription == null) return null;
 
             return new SuscripcionDto
@@ -27,32 +28,33 @@ namespace Conversor_Monedas_Api.Services
                 Id = subscription.Id,
                 Type = subscription.Tipo,
                 ConversionLimit = GetConversionLimit(subscription.Tipo),
-                MonthlyReset = subscription.MaximoConversiones
+                MonthlyReset = subscription.MaximoConversiones.HasValue
             };
         }
 
         public int GetConversionLimit(SuscripcionEnum type)
         {
-            return type switch//
+            return type switch
             {
-                SuscripcionEnum.Free => 10,
+                SuscripcionEnum.Free => 2,
                 SuscripcionEnum.Trial => 100,
                 SuscripcionEnum.Pro => int.MaxValue,
             };
         }
 
-        public List<SuscripcionDto> GetAllSubscriptions()
+        public async Task<List<SuscripcionDto>> GetAllSubscriptionsAsync()
         {
-            var subscriptions = _subscriptionRepository.GetAllSubscriptions();
+            var subscriptions = await _subscriptionRepository.GetAllSubscriptionsAsync();
 
             return subscriptions.Select(subscription => new SuscripcionDto
             {
                 Id = subscription.Id,
                 Type = subscription.Tipo,
                 ConversionLimit = GetConversionLimit(subscription.Tipo),
-                MonthlyReset = subscription.MaximoConversiones
+                MonthlyReset = subscription.MaximoConversiones.HasValue
             }).ToList();
         }
+
 
         public async Task CrearSuscripcionAsync(Suscripcion suscripcion)
         {

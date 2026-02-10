@@ -53,9 +53,6 @@ namespace Conversor_Monedas_Api.Repositories
                 existingUser.Password = user.Password;
                 existingUser.FirstName = user.FirstName;
                 existingUser.LastName = user.LastName;
-                existingUser.Role = user.Role;
-                existingUser.Type = user.Type;
-                existingUser.IsActive = user.IsActive;
 
                 _context.SaveChanges();
                 return true;
@@ -78,13 +75,16 @@ namespace Conversor_Monedas_Api.Repositories
         public bool UpdateUserSubscription(int userId, SuscripcionEnum newType)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            if (user != null)
+            if (user == null)
             {
-                user.Type = newType;
-                _context.SaveChanges();
-                return true;
+                return false;
             }
-            return false;
+            user.Type = newType;
+            user.SubscriptionStartDate = DateTime.UtcNow; // 👈 reinicia el “desde cuándo” tiene ese plan
+
+            _context.SaveChanges();
+            return true;
+
         }
     }
 }

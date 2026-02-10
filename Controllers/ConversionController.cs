@@ -1,21 +1,19 @@
 ﻿using Conversor_Monedas_Api.DTOs;
-using Conversor_Monedas_Api.Enum;
 using Conversor_Monedas_Api.Interfaces.services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using System;
 
 namespace Conversor_Monedas_Api.Controllers
 {
-    //[Authorize] // Esto asegura que todos los métodos del controlador requieren autorización
+    [Authorize] // 👈 ahora sí: todos los endpoints requieren JWT válido
     [Route("api/[controller]")]
     [ApiController]
     public class ConversionController : ControllerBase
     {
         private readonly IConversionService _conversionService;
-        private readonly IUsuarioService _usuarioService; // Servicio para obtener el UserId
-
+        private readonly IUsuarioService _usuarioService;
 
         public ConversionController(IConversionService conversionService, IUsuarioService usuarioService)
         {
@@ -23,57 +21,83 @@ namespace Conversor_Monedas_Api.Controllers
             _usuarioService = usuarioService;
         }
 
-        // Endpoint para realizar una conversión
+        // POST api/Conversion
         [HttpPost]
-        public IActionResult PerformConversion([FromBody] ConversionDto request)
+        public IActionResult PerformConversion([FromBody] ConversionRequestDto request)//para ver la request deserializada (JSON) "Console.WriteLine(JsonSerializer.Serialize(request));"
         {
-            // Validar los datos de la solicitud
-            if (request == null || request.Amount <= 0 ||
-                string.IsNullOrEmpty(request.FromCurrency) || string.IsNullOrEmpty(request.ToCurrency))
+            if (request == null ||
+                request.Amount <= 0 ||
+                string.IsNullOrWhiteSpace(request.FromCurrency) ||
+                string.IsNullOrWhiteSpace(request.ToCurrency))
             {
-                return BadRequest("Datos de solicitud inválidos.");
+                return BadRequest(new { Message = "Datos de solicitud inválidos." });
             }
 
             try
             {
-                // Obtener el UsuarioId desde el servicio
-                var userId = _usuarioService.GetUserIdFromContext(User);
+                // 1) UserId desde el token
+                var userId = _usuarioService.GetUserIdFromContext(User); //“Aunque el front mande usuarioId, el backend no confía en eso. Obtiene el userId desde el JWT (claims).”
 
-                // Ejecutar la conversión
-                var result = _conversionService.ExecuteConversion(userId, request.FromCurrency, request.ToCurrency, request.Amount);
+                // 2) Ejecutar conversión (valida límite internamente)
+                var result = _conversionService.ExecuteConversion(
+                    userId,
+                    request.FromCurrency,
+                    request.ToCurrency,
+                    request.Amount
+                );
 
-                // Obtener el historial de conversiones
+                // 3) Traer historial actualizado
                 var conversions = _conversionService.GetUserConversions(userId);
 
-                // Devolver el resultado con el historial de conversiones
                 return Ok(new
                 {
                     Conversion = result,
                     History = conversions
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                // Cuando ValidarLimiteSuscripcion lanza “Usuario no válido o inactivo”
+                return Unauthorized(new { Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // 👉 Límite de suscripción alcanzado
+                return StatusCode(StatusCodes.Status403Forbidden, new { Message = ex.Message });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                // Error inesperado
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Ocurrió un error al realizar la conversión.",
+                    Detail = ex.Message
+                });
             }
         }
 
-
-        // Endpoint para obtener el historial de conversiones de un usuario
+        // GET api/Conversion/History
         [HttpGet("History")]
         public IActionResult GetUserConversions()
         {
             try
             {
-                // Obtener el UsuarioId desde el servicio
                 var userId = _usuarioService.GetUserIdFromContext(User);
 
                 var conversions = _conversionService.GetUserConversions(userId);
                 return Ok(conversions);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { Message = ex.Message });
+            }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Ocurrió un error al obtener el historial de conversiones.",
+                    Detail = ex.Message
+                });
             }
         }
     }

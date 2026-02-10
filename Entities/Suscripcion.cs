@@ -8,12 +8,11 @@ namespace Conversor_Monedas_Api.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }  // Id de la suscripción
+        public int Id { get; set; } 
 
         [Required]
         public SuscripcionEnum Tipo { get; set; }  // Tipo ("Free", "Trial", "Pro")
 
-        [Required]
-        public bool MaximoConversiones { get; set; }  // Número máximo de conversiones permitidas
+        public int? MaximoConversiones { get; set; }  // Número máximo de conversiones permitidas
     }
 }

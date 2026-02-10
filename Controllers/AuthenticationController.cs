@@ -28,7 +28,7 @@ namespace Conversor_Monedas_Api.Controllers
             if (token == null)
             {
                 // Devuelve un error con el estado y mensaje según tu interfaz `ResLogin`
-                return Unauthorized(new ResLogin
+                return Unauthorized(new LoginResponseDto
                 {
                     Status = "error",
                     Mensaje = "Credenciales incorrectas"
@@ -38,7 +38,7 @@ namespace Conversor_Monedas_Api.Controllers
 
 
             // Paso 2: Retornar el token
-            return Ok(new ResLogin
+            return Ok(new LoginResponseDto
             {
                 Status = "success",
                 Mensaje = "Inicio de sesión exitoso",

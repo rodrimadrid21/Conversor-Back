@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Conversor_Monedas_Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241115025323_InitalMigration")]
-    partial class InitalMigration
+    [Migration("20251125133619_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,15 +43,12 @@ namespace Conversor_Monedas_Api.Migrations
                     b.Property<decimal>("MontoOriginal")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("UsuarioId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ConversionId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Conversion");
                 });
@@ -111,6 +108,9 @@ namespace Conversor_Monedas_Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("ConversionCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -135,6 +135,9 @@ namespace Conversor_Monedas_Api.Migrations
                     b.Property<DateTime>("SubscriptionStartDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -149,7 +152,9 @@ namespace Conversor_Monedas_Api.Migrations
                 {
                     b.HasOne("Conversor_Monedas_Api.Entities.Usuario", "Usuario")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Usuario");
                 });

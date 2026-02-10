@@ -13,8 +13,11 @@ namespace Conversor_Monedas_Api.Services
         private readonly ISuscripcionService _subscriptionService;
         private readonly IUsuarioRepository _userRepository;
 
-        public ConversionService(IConversionRepository conversionRepository, IMonedaRepository currencyRepository,
-            ISuscripcionService subscriptionService, IUsuarioRepository userRepository)
+        public ConversionService(
+            IConversionRepository conversionRepository,
+            IMonedaRepository currencyRepository,
+            ISuscripcionService subscriptionService,
+            IUsuarioRepository userRepository)
         {
             _conversionRepository = conversionRepository;
             _currencyRepository = currencyRepository;
@@ -22,44 +25,28 @@ namespace Conversor_Monedas_Api.Services
             _userRepository = userRepository;
         }
 
+
+
         public ConversionDto ExecuteConversion(int userId, string fromCurrency, string toCurrency, decimal amount)
         {
-            // Verificar si el usuario existe
-            var user = _userRepository.GetUserById(userId);
-            if (user == null)
-                throw new Exception("Usuario no encontrado");
+            // 1) Valida suscripción y trae el usuario
+            var user = ValidarLimiteSuscripcion(userId);
 
-            // Determinar el límite de conversiones basado en el rol
-            int roleLimit = user.Role switch
-            {
-                UsuarioEnum.Admin => int.MaxValue, // Ilimitado
-                UsuarioEnum.user => 100, // Límite de 100 conversiones
-                UsuarioEnum.Guest => 10, // Límite de 10 conversiones
-                _ => throw new Exception("Rol no reconocido")
-            };
-
-            // Obtener las conversiones realizadas por el usuario
-            var conversions = _conversionRepository.GetConversionsByUserId(userId);
-
-            // Verificar si se alcanzó el límite
-            if (conversions.Count >= roleLimit)
-                throw new Exception("Has alcanzado el límite de conversiones permitido para tu rol.");
-
-
-            // Obtener tasas de convertibilidad de las monedas
+            // 2) Obtener tasas de convertibilidad de las monedas
             var fromCurrencyEntity = _currencyRepository.GetCurrencyByCode(fromCurrency);
             var toCurrencyEntity = _currencyRepository.GetCurrencyByCode(toCurrency);
 
             if (fromCurrencyEntity == null || toCurrencyEntity == null)
                 throw new Exception("Moneda no encontrada");
 
-            // Calcular el resultado de la conversión
+            // 3) Calcular el resultado de la conversión
             decimal result = amount * (fromCurrencyEntity.IndiceConvertibilidad / toCurrencyEntity.IndiceConvertibilidad);
 
-            // Guardar la conversión en el repositorio y capturar el Id de la conversión creada
+            // 4) Guardar la conversión en el repositorio y capturar el Id de la conversión creada
             var conversion = new Conversion
             {
                 Usuario = user,
+                UsuarioId = user.UserId,       // si tu entidad tiene esta FK
                 MonedaOrigen = fromCurrency,
                 MonedaDestino = toCurrency,
                 MontoOriginal = amount,
@@ -68,15 +55,15 @@ namespace Conversor_Monedas_Api.Services
             };
             int conversionId = _conversionRepository.AddConversion(conversion);
 
-            // Devolver el DTO de conversión
+            // 5) Devolver el DTO de conversión
             return new ConversionDto
             {
                 ConversionId = conversionId,
                 UsuarioId = userId,
                 FromCurrency = fromCurrency,
                 ToCurrency = toCurrency,
-                FromCurrencySymbol = fromCurrencyEntity.Simbolo, // Agregar el símbolo de la moneda de origen
-                ToCurrencySymbol = toCurrencyEntity.Simbolo, // Agregar el símbolo de la moneda de destino
+                FromCurrencySymbol = fromCurrencyEntity.Simbolo,
+                ToCurrencySymbol = toCurrencyEntity.Simbolo,
                 Amount = amount,
                 Result = result,
                 Date = conversion.FechaConversion
@@ -92,12 +79,48 @@ namespace Conversor_Monedas_Api.Services
                 UsuarioId = c.UsuarioId,
                 FromCurrency = c.MonedaOrigen,
                 ToCurrency = c.MonedaDestino,
-                FromCurrencySymbol = _currencyRepository.GetCurrencyByCode(c.MonedaOrigen)?.Simbolo, // Obtener el símbolo de la moneda de origen
-                ToCurrencySymbol = _currencyRepository.GetCurrencyByCode(c.MonedaDestino)?.Simbolo, // Obtener el símbolo de la moneda de destino
+                FromCurrencySymbol = _currencyRepository.GetCurrencyByCode(c.MonedaOrigen)?.Simbolo,
+                ToCurrencySymbol = _currencyRepository.GetCurrencyByCode(c.MonedaDestino)?.Simbolo,
                 Amount = c.MontoOriginal,
                 Result = c.MontoConvertido,
                 Date = c.FechaConversion
             }).ToList();
+        }
+        private Usuario ValidarLimiteSuscripcion(int userId)
+        {
+            var usuario = _userRepository.GetUserById(userId);
+            if (usuario == null || !usuario.IsActive)
+                throw new UnauthorizedAccessException("Usuario no válido o inactivo.");
+
+            var tipo = usuario.Type;
+            int limite = _subscriptionService.GetConversionLimit(tipo);
+
+            var ahora = DateTime.UtcNow;
+            var desde = ahora.AddDays(-30);
+
+            int usadasUltimos30 = _conversionRepository.CountUserConversionsSince(userId, desde);
+
+            if (limite != int.MaxValue && usadasUltimos30 >= limite)
+            {
+                // buscamos la conversión más vieja dentro de los últimos 30 días
+                var oldest = _conversionRepository.GetOldestConversionDateSince(userId, desde);
+
+                int diasRestantes = 0;
+                if (oldest.HasValue)
+                {
+                    var resetAt = oldest.Value.AddDays(30);
+                    var remaining = resetAt - ahora;
+
+                    // ceil: si faltan 0.2 días, mostramos 1 día
+                    diasRestantes = (int)Math.Ceiling(Math.Max(0, remaining.TotalDays));
+                }
+
+                throw new InvalidOperationException(
+                    $"Límite mensual alcanzado para plan {tipo}: {usadasUltimos30}/{limite}.\n" +
+                    $"Volvés a tener intentos en aproximadamente {diasRestantes} día(s).");
+            }
+
+            return usuario;
         }
     }
 }

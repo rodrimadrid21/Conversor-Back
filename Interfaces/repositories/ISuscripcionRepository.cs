@@ -5,11 +5,14 @@ namespace Conversor_Monedas_Api.Interfaces.repositories
 {
     public interface ISuscripcionRepository
     {
-        // Obtener todas las suscripciones
-        List<Suscripcion> GetAllSubscriptions(); 
+        /// Obtener todas las suscripciones
+        Task<List<Suscripcion>> GetAllSubscriptionsAsync();
 
-        // Obtener una suscripción por su ID
-        Suscripcion? GetSubscriptionByType(SuscripcionEnum type); 
+        // Obtener una suscripción por tipo (Free/Trial/Pro)
+        Task<Suscripcion?> GetSubscriptionByTypeAsync(SuscripcionEnum type);
+
+        // Obtener una suscripción por ID
+        Task<Suscripcion?> GetByIdAsync(int id);
 
         // Crear una nueva suscripción
         Task AddAsync(Suscripcion subscription); 

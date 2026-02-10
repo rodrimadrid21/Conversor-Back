@@ -40,16 +40,17 @@ namespace Conversor_Monedas_Api.Services
 
         public string GenerateJwtToken(Usuario user)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]));
+            var keyBytes = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+            var securityKey = new SymmetricSecurityKey(keyBytes);
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var claims = new List<Claim>
-            {
-                new Claim("sub", user.UserId.ToString()),
-                new Claim("given_name", user.FirstName),
-                new Claim("family_name", user.LastName),
-                new Claim("role", user.Role.ToString())
-            };
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),         // "sub"
+        new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName ?? ""),     // "given_name"
+        new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),     // "family_name"
+        new Claim("subscriptionType", user.Type.ToString()),
+    };
 
             var jwtToken = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
@@ -63,13 +64,22 @@ namespace Conversor_Monedas_Api.Services
             return new JwtSecurityTokenHandler().WriteToken(jwtToken);
         }
 
+
         public int GetUserIdFromContext(ClaimsPrincipal user)
         {
-            var userIdClaim = user?.FindFirst("sub");
+            // Intentar con "sub" estándar de JWT y con NameIdentifier por si algún mapeo se mete
+            var userIdClaim =
+                user?.FindFirst(JwtRegisteredClaimNames.Sub) ??          // "sub"
+                user?.FindFirst(ClaimTypes.NameIdentifier) ??            // por si ASP.NET lo mapea
+                user?.FindFirst("sub");                                  // fallback literal
+
             if (userIdClaim != null)
             {
+                Console.WriteLine($"[GetUserIdFromContext] UserId desde claims: {userIdClaim.Value}");
                 return int.Parse(userIdClaim.Value);
             }
+
+            Console.WriteLine("[GetUserIdFromContext] No se encontró el claim de usuario (sub / nameidentifier)");
             throw new UnauthorizedAccessException("Usuario no autenticado.");
         }
 
@@ -81,7 +91,6 @@ namespace Conversor_Monedas_Api.Services
                 UserName = u.UserName,
                 FirstName = u.FirstName,
                 LastName = u.LastName,
-                Role = u.Role,
                 Type = u.Type,
                 SubscriptionStartDate = u.SubscriptionStartDate
             }).ToList();
@@ -102,11 +111,7 @@ namespace Conversor_Monedas_Api.Services
                 UserName = userDto.UserName,
                 Password = userDto.Password,
                 FirstName = userDto.FirstName,
-                LastName = userDto.LastName,
-                Role = UsuarioEnum.user,
-                Type = SuscripcionEnum.Free,
-                SubscriptionStartDate = DateTime.UtcNow,
-                IsActive = true
+                LastName = userDto.LastName
             };
 
             // Guardar el usuario en el repositorio
@@ -160,8 +165,6 @@ namespace Conversor_Monedas_Api.Services
             existingUser.FirstName = userDto.FirstName;
             existingUser.LastName = userDto.LastName;
             existingUser.Password = userDto.Password;
-            existingUser.Role = userDto.Role;
-            existingUser.Type = userDto.Type;
 
             return _repository.UpdateUser(existingUser);
         }

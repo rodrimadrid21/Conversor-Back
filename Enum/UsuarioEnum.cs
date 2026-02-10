@@ -2,8 +2,8 @@
 {
     public enum UsuarioEnum
     {
-        Admin,//pro
-        user,//trial
-        Guest//free
+        Admin,
+        user,
+        Guest
     }
 }
