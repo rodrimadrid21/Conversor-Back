@@ -6,19 +6,16 @@ namespace Conversor_Monedas_Api.DTOs
 {
     public class UsuarioDto
     {
-        public required string FirstName { get; set; } // Nombre
+        public required string FirstName { get; set; } 
 
-        public required string LastName { get; set; } // Apellido
+        public required string LastName { get; set; } 
 
-        public required string UserName { get; set; } // Nombre de usuario
+        public required string UserName { get; set; } 
 
-        [DataType(DataType.Password)]
-        public string Password { get; set; } // Contraseña
+        public string Password { get; set; } 
 
-        public UsuarioEnum Role { get; set; } = UsuarioEnum.user; // Rol del usuario
+        public SuscripcionEnum Type { get; set; } = SuscripcionEnum.Free;
 
-        public SuscripcionEnum Type { get; set; } = SuscripcionEnum.Free;// Tipo de suscripción
-
-        public DateTime SubscriptionStartDate { get; set; } = DateTime.UtcNow; // Fecha de inicio de la suscripción
+        public DateTime SubscriptionStartDate { get; set; } = DateTime.UtcNow;
     }
 }

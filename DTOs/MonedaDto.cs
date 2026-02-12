@@ -3,12 +3,12 @@
     public class MonedaDto
     {
         public required int CurrencyId { get; set; }
-        public required string Code { get; set; } // Código de la moneda (e.g., USD, EUR)
+        public required string Code { get; set; } // ("ARS", "USDT", "BTC", "ETH", "LTC")
 
-        public required string Legend { get; set; } // Descripción o leyenda de la moneda
+        public required string Legend { get; set; } // ("Pesos Argentinos")
 
-        public required string Symbol { get; set; } // Símbolo de la moneda (e.g., $, €)
+        public required string Symbol { get; set; } // ("$", "₮", "₿", "Ξ", "Ł")
 
-        public required decimal ConvertibilityIndex { get; set; } // Índice de convertibilidad
+        public required decimal ConvertibilityIndex { get; set; } 
     }
 }

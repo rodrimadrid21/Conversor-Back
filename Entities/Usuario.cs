@@ -29,10 +29,8 @@ namespace Conversor_Monedas_Api.Entities
         public UsuarioEnum Role { get; set; } = UsuarioEnum.user;
 
         public SuscripcionEnum Type { get; set; } = SuscripcionEnum.Free;
-        // ✅ NUEVO (nullable por ahora para no romper DB)
-        public int? SuscripcionId { get; set; }
 
-        public DateTime SubscriptionStartDate { get; set; } = DateTime.UtcNow;// Fecha de inicio de la suscripción
+        public DateTime SubscriptionStartDate { get; set; } = DateTime.UtcNow;
 
         public bool IsActive { get; set; } = true;
     }

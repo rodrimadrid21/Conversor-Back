@@ -130,7 +130,6 @@ namespace Conversor_Monedas_Api.Services
                 UserName = user.UserName,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = user.Role,
                 Type = user.Type,
                 SubscriptionStartDate = user.SubscriptionStartDate
             };
@@ -148,7 +147,6 @@ namespace Conversor_Monedas_Api.Services
                 UserName = user.UserName,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = user.Role,
                 Type = user.Type,
                 SubscriptionStartDate = user.SubscriptionStartDate
             };

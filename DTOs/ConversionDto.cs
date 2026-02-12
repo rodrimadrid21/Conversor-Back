@@ -4,7 +4,6 @@
     {
         public int ConversionId { get; set; }
 
-        // 👇 sacamos "required" porque el UserId lo sacamos del token
         public int UsuarioId { get; set; }
 
         public required string FromCurrency { get; set; }

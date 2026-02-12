@@ -11,8 +11,8 @@ namespace Conversor_Monedas_Api.Entities
         public int Id { get; set; } 
 
         [Required]
-        public SuscripcionEnum Tipo { get; set; }  // Tipo ("Free", "Trial", "Pro")
+        public SuscripcionEnum Tipo { get; set; } 
 
-        public int? MaximoConversiones { get; set; }  // Número máximo de conversiones permitidas
+        public int? MaximoConversiones { get; set; } 
     }
 }

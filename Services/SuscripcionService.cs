@@ -28,7 +28,6 @@ namespace Conversor_Monedas_Api.Services
                 Id = subscription.Id,
                 Type = subscription.Tipo,
                 ConversionLimit = GetConversionLimit(subscription.Tipo),
-                MonthlyReset = subscription.MaximoConversiones.HasValue
             };
         }
 
@@ -51,7 +50,6 @@ namespace Conversor_Monedas_Api.Services
                 Id = subscription.Id,
                 Type = subscription.Tipo,
                 ConversionLimit = GetConversionLimit(subscription.Tipo),
-                MonthlyReset = subscription.MaximoConversiones.HasValue
             }).ToList();
         }
 
