@@ -1,23 +1,24 @@
 ﻿using Conversor_Monedas_Api.DTOs;
 using Conversor_Monedas_Api.Entities;
 using Conversor_Monedas_Api.Enum;
+using System.Collections.Generic;
 
 namespace Conversor_Monedas_Api.Interfaces.services
 {
     public interface ISuscripcionService
     {
-        // 🔹 Catálogo completo de suscripciones
-        Task<List<SuscripcionDto>> GetAllSubscriptionsAsync();
+        List<SuscripcionDto> GetAllSubscriptions();
 
-        // 🔹 Obtener una suscripción por tipo (Free / Trial / Pro)
-        Task<SuscripcionDto?> GetSubscriptionByTypeAsync(SuscripcionEnum subscriptionType);
+        SuscripcionDto? GetSubscriptionByType(SuscripcionEnum subscriptionType);
 
-        // 🔹 Límite de conversiones (por ahora sigue por enum)
+        // 🔹 Límite de conversiones (por enum)
         int GetConversionLimit(SuscripcionEnum type);
 
         // 🔹 CRUD administrativo sobre la entidad Suscripcion
-        Task CrearSuscripcionAsync(Suscripcion suscripcion);
-        Task ActualizarSuscripcionAsync(Suscripcion suscripcion);
-        Task EliminarSuscripcionAsync(int id);
+        void CrearSuscripcion(Suscripcion suscripcion);
+
+        // ✅ ahora devuelven bool para saber si existía
+        bool ActualizarSuscripcion(Suscripcion suscripcion);
+        bool EliminarSuscripcion(int id);
     }
 }

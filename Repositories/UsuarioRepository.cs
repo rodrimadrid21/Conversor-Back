@@ -30,7 +30,6 @@ namespace Conversor_Monedas_Api.Repositories
             return _context.Users.FirstOrDefault(u => u.UserId == id);
         }
 
-        // Obtener usuario por Username
         public Usuario GetUserByUsername(string Username)
         {
             return _context.Users.FirstOrDefault(u => u.UserName == Username);
@@ -43,7 +42,6 @@ namespace Conversor_Monedas_Api.Repositories
             return user.UserId;
         }
 
-        // Actualizar usuario existente
         public bool UpdateUser(Usuario user)
         {
             var existingUser = _context.Users.FirstOrDefault(u => u.UserId == user.UserId);
@@ -80,7 +78,7 @@ namespace Conversor_Monedas_Api.Repositories
                 return false;
             }
             user.Type = newType;
-            user.SubscriptionStartDate = DateTime.UtcNow; // 👈 reinicia el “desde cuándo” tiene ese plan
+            user.SubscriptionStartDate = DateTime.UtcNow; 
 
             _context.SaveChanges();
             return true;

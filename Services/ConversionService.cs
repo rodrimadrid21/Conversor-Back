@@ -25,8 +25,6 @@ namespace Conversor_Monedas_Api.Services
             _userRepository = userRepository;
         }
 
-
-
         public ConversionDto ExecuteConversion(int userId, string fromCurrency, string toCurrency, decimal amount)
         {
             // 1) Valida suscripción y trae el usuario
@@ -37,7 +35,7 @@ namespace Conversor_Monedas_Api.Services
             var toCurrencyEntity = _currencyRepository.GetCurrencyByCode(toCurrency);
 
             if (fromCurrencyEntity == null || toCurrencyEntity == null)
-                throw new Exception("Moneda no encontrada");
+                throw new InvalidOperationException("Moneda no encontrada.");
 
             // 3) Calcular el resultado de la conversión
             decimal result = amount * (fromCurrencyEntity.IndiceConvertibilidad / toCurrencyEntity.IndiceConvertibilidad);
@@ -46,7 +44,7 @@ namespace Conversor_Monedas_Api.Services
             var conversion = new Conversion
             {
                 Usuario = user,
-                UsuarioId = user.UserId,       // si tu entidad tiene esta FK
+                UsuarioId = user.UserId,
                 MonedaOrigen = fromCurrency,
                 MonedaDestino = toCurrency,
                 MontoOriginal = amount,
@@ -89,6 +87,7 @@ namespace Conversor_Monedas_Api.Services
         private Usuario ValidarLimiteSuscripcion(int userId)
         {
             var usuario = _userRepository.GetUserById(userId);
+
             if (usuario == null || !usuario.IsActive)
                 throw new UnauthorizedAccessException("Usuario no válido o inactivo.");
 
@@ -96,30 +95,44 @@ namespace Conversor_Monedas_Api.Services
             int limite = _subscriptionService.GetConversionLimit(tipo);
 
             var ahora = DateTime.UtcNow;
-            var desde = ahora.AddDays(-30);
+            var desde = ahora.AddDays(-30); // los ultimos 30 días
 
-            int usadasUltimos30 = _conversionRepository.CountUserConversionsSince(userId, desde);
+            // cuantas hizo en los ult 30 dias
+            int usadasUltimos30 = _conversionRepository.CountUserConversionsSince(userId, desde); 
 
-            if (limite != int.MaxValue && usadasUltimos30 >= limite)
+            if (limite != int.MaxValue && usadasUltimos30 >= limite) //valida si es pro y si ya usó todas las conversiones permitidas
             {
                 // buscamos la conversión más vieja dentro de los últimos 30 días
                 var oldest = _conversionRepository.GetOldestConversionDateSince(userId, desde);
 
                 int diasRestantes = 0;
+
+                // Si existe una conversión dentro de los últimos 30 días,
+                // significa que podemos calcular cuándo se va a liberar el primer "cupo".
                 if (oldest.HasValue)
                 {
+                    // Cuando cumple 30 dias
                     var resetAt = oldest.Value.AddDays(30);
-                    var remaining = resetAt - ahora;
 
-                    // ceil: si faltan 0.2 días, mostramos 1 día
-                    diasRestantes = (int)Math.Ceiling(Math.Max(0, remaining.TotalDays));
+                    // Calculamos cuánto tiempo falta desde ahora
+                    var restante = resetAt - ahora;
+
+                    // restante.TotalDays puede dar: 3.4 días, 0.2 días, o incluso -1 día si ya pasó.
+                    // Math.Ceiling(...) redondea hacia arriba:
+                    //   0.2 días → mostramos 1 día
+                    //   3.1 días → mostramos 4 días
+                    //
+                    // Lo convertimos a int porque solo queremos mostrar días enteros.
+                    diasRestantes = (int)Math.Ceiling(Math.Max(0, restante.TotalDays));
                 }
 
+                // Si llegamos acá es porque el usuario alcanzó el límite.403
                 throw new InvalidOperationException(
                     $"Límite mensual alcanzado para plan {tipo}: {usadasUltimos30}/{limite}.\n" +
                     $"Volvés a tener intentos en aproximadamente {diasRestantes} día(s).");
             }
 
+            // Este return solo se ejecuta si NO se alcanzó el límite.
             return usuario;
         }
     }

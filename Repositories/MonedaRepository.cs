@@ -14,7 +14,6 @@ namespace Conversor_Monedas_Api.Repositories
             _context = context;
         }
 
-        // 🔹 Devolver solo monedas activas
         public List<Moneda> GetAllCurrencies()
         {
             return _context.Moneda
@@ -22,14 +21,11 @@ namespace Conversor_Monedas_Api.Repositories
                 .ToList();
         }
 
-        // 🔹 Buscar por ID solo si está activa
         public Moneda GetCurrencyById(int id)
         {
             return _context.Moneda
                 .FirstOrDefault(c => c.Id == id && c.IsActive);
         }
-
-        // 🔹 Buscar por código solo si está activa
         public Moneda GetCurrencyByCode(string code)
         {
             return _context.Moneda
@@ -38,7 +34,6 @@ namespace Conversor_Monedas_Api.Repositories
 
         public int AddCurrency(Moneda currency)
         {
-            currency.IsActive = true; // Asegurar que entra como activa
             _context.Moneda.Add(currency);
             _context.SaveChanges();
             return currency.Id;
@@ -46,12 +41,13 @@ namespace Conversor_Monedas_Api.Repositories
 
         public bool UpdateCurrency(Moneda currency)
         {
-            var existingCurrency = _context.Moneda.FirstOrDefault(m => m.Id == currency.Id);
+            var existingCurrency = _context.Moneda.FirstOrDefault(c => c.Id == currency.Id && c.IsActive);
             if (existingCurrency == null)
             {
-                return false; // No existe la moneda
+                return false;
             }
 
+            // al registro existente en la bdd se le asigna el valor del objeto currency
             existingCurrency.Codigo = currency.Codigo;
             existingCurrency.Leyenda = currency.Leyenda;
             existingCurrency.Simbolo = currency.Simbolo;
@@ -63,14 +59,13 @@ namespace Conversor_Monedas_Api.Repositories
             return true;
         }
 
-        // 🔥 BAJA LÓGICA — aquí está el FIX opcional
         public bool DeleteCurrency(int id)
         {
             var currency = _context.Moneda.FirstOrDefault(c => c.Id == id);
             if (currency != null)
             {
-                currency.IsActive = false;        // ⚡ en vez de eliminarla
-                _context.Moneda.Update(currency); // la marcamos como inactiva
+                currency.IsActive = false;        
+                _context.Moneda.Update(currency); 
                 _context.SaveChanges();
                 return true;
             }

@@ -1,13 +1,12 @@
 ﻿using Conversor_Monedas_Api.DTOs;
 using Conversor_Monedas_Api.Interfaces.services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 
 namespace Conversor_Monedas_Api.Controllers
 {
-    [Authorize] // 👈 ahora sí: todos los endpoints requieren JWT válido
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ConversionController : ControllerBase
@@ -21,9 +20,8 @@ namespace Conversor_Monedas_Api.Controllers
             _usuarioService = usuarioService;
         }
 
-        // POST api/Conversion
         [HttpPost]
-        public IActionResult PerformConversion([FromBody] ConversionRequestDto request)//para ver la request deserializada (JSON) "Console.WriteLine(JsonSerializer.Serialize(request));"
+        public IActionResult Convert([FromBody] ConversionRequestDto request)
         {
             if (request == null ||
                 request.Amount <= 0 ||
@@ -36,9 +34,9 @@ namespace Conversor_Monedas_Api.Controllers
             try
             {
                 // 1) UserId desde el token
-                var userId = _usuarioService.GetUserIdFromContext(User); //“Aunque el front mande usuarioId, el backend no confía en eso. Obtiene el userId desde el JWT (claims).”
+                var userId = _usuarioService.GetUserIdFromContext(User);
 
-                // 2) Ejecutar conversión (valida límite internamente)
+                // 2) Ejecutar conversión
                 var result = _conversionService.ExecuteConversion(
                     userId,
                     request.FromCurrency,
@@ -57,17 +55,16 @@ namespace Conversor_Monedas_Api.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                // Cuando ValidarLimiteSuscripcion lanza “Usuario no válido o inactivo”
+                // 401
                 return Unauthorized(new { Message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                // 👉 Límite de suscripción alcanzado
+                // 403- limite de conversiones
                 return StatusCode(StatusCodes.Status403Forbidden, new { Message = ex.Message });
             }
             catch (Exception ex)
             {
-                // Error inesperado
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
                     Message = "Ocurrió un error al realizar la conversión.",
@@ -76,7 +73,6 @@ namespace Conversor_Monedas_Api.Controllers
             }
         }
 
-        // GET api/Conversion/History
         [HttpGet("History")]
         public IActionResult GetUserConversions()
         {

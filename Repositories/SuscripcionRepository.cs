@@ -2,7 +2,8 @@
 using Conversor_Monedas_Api.Entities;
 using Conversor_Monedas_Api.Enum;
 using Conversor_Monedas_Api.Interfaces.repositories;
-using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Conversor_Monedas_Api.Repositories
 {
@@ -15,48 +16,49 @@ namespace Conversor_Monedas_Api.Repositories
             _context = context;
         }
 
-        // Obtener todas las suscripciones (catálogo)
-        public async Task<List<Suscripcion>> GetAllSubscriptionsAsync()
+        public List<Suscripcion> GetAllSubscriptions()
         {
-            return await _context.Suscripcion.ToListAsync();
+            return _context.Suscripcion.ToList();
         }
 
-        // Obtener una suscripción por tipo (Free / Trial / Pro)
-        public async Task<Suscripcion?> GetSubscriptionByTypeAsync(SuscripcionEnum type)
+        public Suscripcion? GetSubscriptionByType(SuscripcionEnum type)
         {
-            return await _context.Suscripcion
-                .FirstOrDefaultAsync(s => s.Tipo == type);
+            return _context.Suscripcion.FirstOrDefault(s => s.Tipo == type);
         }
 
-        // Obtener suscripción por Id
-        public async Task<Suscripcion?> GetByIdAsync(int id)
+        public Suscripcion? GetById(int id)
         {
-            return await _context.Suscripcion.FindAsync(id);
+            return _context.Suscripcion.Find(id);
         }
 
-        // Crear una nueva suscripción (normalmente solo para seed / admin)
-        public async Task AddAsync(Suscripcion suscripcion)
+        public void Add(Suscripcion subscription)
         {
-            await _context.Suscripcion.AddAsync(suscripcion);
-            await _context.SaveChangesAsync();
+            _context.Suscripcion.Add(subscription);
+            _context.SaveChanges();
         }
 
-        // Actualizar una suscripción (ej: cambiar límites)
-        public async Task UpdateAsync(Suscripcion suscripcion)
+        public bool Update(Suscripcion subscription)
         {
-            _context.Suscripcion.Update(suscripcion);
-            await _context.SaveChangesAsync();
+            var sub = _context.Suscripcion.FirstOrDefault(s => s.Id == subscription.Id);
+            if (sub == null)
+                return false;
+
+            // al registro existente en la bdd se le asigna el valor del objeto suscription
+            sub.Tipo = subscription.Tipo;
+
+            _context.SaveChanges();
+            return true;
         }
 
-        // Eliminar una suscripción (raro en la práctica, pero queda)
-        public async Task DeleteAsync(int id)
+        public bool Delete(int id)
         {
-            var suscripcion = await GetByIdAsync(id);
+            var suscripcion = GetById(id);
             if (suscripcion == null)
-                return;
+                return false;
 
             _context.Suscripcion.Remove(suscripcion);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+            return true;
         }
     }
 }

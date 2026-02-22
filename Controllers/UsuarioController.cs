@@ -21,7 +21,7 @@ namespace Conversor_Monedas_Api.Controllers
         }
 
         [HttpGet("All")]
-        public IActionResult GetAllActiveUsers()
+        public IActionResult GetAllUsers()
         {
             var users = _userService.GetAllUsers();
             return Ok(users);
@@ -36,16 +36,18 @@ namespace Conversor_Monedas_Api.Controllers
                 return BadRequest(new RegisterResponseDto { Mensaje = "El nombre de usuario y la contraseña son obligatorios." });
             }
 
-            // Llama al servicio para registrar al usuario
-            int userId = _userService.RegisterUser(userDto);
-
-            if (userId <= 0)
+            try
             {
-                return BadRequest(new RegisterResponseDto { Mensaje = "Error al registrar el usuario." });
-            }
+                // Llama al servicio para registrar al usuario
+                _userService.RegisterUser(userDto);
 
-            // Retorna mensaje de éxito
-            return Ok(new RegisterResponseDto { Mensaje = "Registro exitoso." });
+                // Retorna mensaje de éxito
+                return Ok(new RegisterResponseDto { Mensaje = "Registro exitoso." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new RegisterResponseDto { Mensaje = ex.Message });
+            }
         }
 
         // Obtener usuario por ID
@@ -60,8 +62,7 @@ namespace Conversor_Monedas_Api.Controllers
             return Ok(user);
         }
 
-        // Obtener usuario por nombre de usuario
-        // 🔥 FIX aplicado acá
+        // Obtener usuario por username
         [HttpGet("ByUsername/{username}")]
         public IActionResult GetUserByUsername(string username)
         {
@@ -82,7 +83,7 @@ namespace Conversor_Monedas_Api.Controllers
                 bool updated = _userService.UpdateUser(userDto);
                 if (!updated)
                 {
-                    return NotFound(new { Message = "Usuario no encontrado para actualizar." });
+                    return NotFound(new { Message = "Usuario no encontrado." });
                 }
                 return Ok(new { Message = "Usuario actualizado exitosamente." });
             }
@@ -99,7 +100,7 @@ namespace Conversor_Monedas_Api.Controllers
             bool deleted = _userService.DeleteUser(userId);
             if (!deleted)
             {
-                return NotFound(new { Message = "Usuario no encontrado para eliminación." });
+                return NotFound(new { Message = "Usuario no encontrado." });
             }
             return Ok(new { Message = "Usuario eliminado lógicamente." });
         }
@@ -110,19 +111,20 @@ namespace Conversor_Monedas_Api.Controllers
         {
             try
             {
-                // Sacamos el userId del token
+                // 1) HttpContext.User representa al usuario autenticado por el middleware JWT.
+                //    Si el request trae un header "Authorization: Bearer <token>", el middleware valida el token y carga sus claims en HttpContext.User.
+              
                 int userId = _userService.GetUserIdFromContext(HttpContext.User);
 
-                bool ok = _userService.UpdateUserSubscription(userId, dto.Type);
+                // 2) Con ese userId (del token) y el plan pedido (dto.Type),
+                //    llamamos a la lógica de negocio (service) para actualizar el plan del usuario. Y el service delega al repository, que actualiza la BD (SQLite) y hace SaveChanges().
+                bool updated = _userService.UpdateUserSubscription(userId, dto.Type);
 
-                if (!ok)
+                if (!updated)
                     return NotFound(new { message = "Usuario no encontrado" });
 
+
                 return Ok(new { message = $"Suscripción actualizada a {dto.Type}" });
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Unauthorized(new { message = "Usuario no autenticado" });
             }
             catch (Exception ex)
             {

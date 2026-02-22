@@ -1,26 +1,27 @@
 ﻿using Conversor_Monedas_Api.Entities;
 using Conversor_Monedas_Api.Enum;
+using System.Collections.Generic;
 
 namespace Conversor_Monedas_Api.Interfaces.repositories
 {
     public interface ISuscripcionRepository
     {
-        /// Obtener todas las suscripciones
-        Task<List<Suscripcion>> GetAllSubscriptionsAsync();
+        // Obtener todas las suscripciones
+        List<Suscripcion> GetAllSubscriptions();
 
         // Obtener una suscripción por tipo (Free/Trial/Pro)
-        Task<Suscripcion?> GetSubscriptionByTypeAsync(SuscripcionEnum type);
+        Suscripcion? GetSubscriptionByType(SuscripcionEnum type);
 
         // Obtener una suscripción por ID
-        Task<Suscripcion?> GetByIdAsync(int id);
+        Suscripcion? GetById(int id);
 
         // Crear una nueva suscripción
-        Task AddAsync(Suscripcion subscription); 
+        void Add(Suscripcion subscription);
 
         // Actualizar los detalles de la suscripción
-        Task UpdateAsync(Suscripcion subscription); 
+        bool Update(Suscripcion subscription);   // ← cambiado
 
         // Eliminar una suscripción
-        Task DeleteAsync(int subscriptionId); 
+        bool Delete(int subscriptionId);         // ← cambiado
     }
 }

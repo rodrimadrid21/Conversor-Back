@@ -4,7 +4,7 @@ using Conversor_Monedas_Api.Enum;
 using Conversor_Monedas_Api.Interfaces.repositories;
 using Conversor_Monedas_Api.Interfaces.services;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace Conversor_Monedas_Api.Services
 {
@@ -17,10 +17,9 @@ namespace Conversor_Monedas_Api.Services
             _subscriptionRepository = subscriptionRepository;
         }
 
-        public async Task<SuscripcionDto?> GetSubscriptionByTypeAsync(SuscripcionEnum type)
+        public SuscripcionDto? GetSubscriptionByType(SuscripcionEnum type)
         {
-            var subscription = await _subscriptionRepository.GetSubscriptionByTypeAsync(type);
-
+            var subscription = _subscriptionRepository.GetSubscriptionByType(type);
             if (subscription == null) return null;
 
             return new SuscripcionDto
@@ -33,40 +32,47 @@ namespace Conversor_Monedas_Api.Services
 
         public int GetConversionLimit(SuscripcionEnum type)
         {
-            return type switch
+            switch (type)
             {
-                SuscripcionEnum.Free => 2,
-                SuscripcionEnum.Trial => 100,
-                SuscripcionEnum.Pro => int.MaxValue,
-            };
+                case SuscripcionEnum.Free:
+                    return 2;
+
+                case SuscripcionEnum.Trial:
+                    return 100;
+
+                case SuscripcionEnum.Pro:
+                    return int.MaxValue;
+
+                default:
+                    return 0;
+            }
         }
 
-        public async Task<List<SuscripcionDto>> GetAllSubscriptionsAsync()
+        public List<SuscripcionDto> GetAllSubscriptions()
         {
-            var subscriptions = await _subscriptionRepository.GetAllSubscriptionsAsync();
+            var subscriptions = _subscriptionRepository.GetAllSubscriptions();
 
             return subscriptions.Select(subscription => new SuscripcionDto
             {
                 Id = subscription.Id,
                 Type = subscription.Tipo,
-                ConversionLimit = GetConversionLimit(subscription.Tipo),
+                ConversionLimit = GetConversionLimit(subscription.Tipo)
             }).ToList();
         }
 
-
-        public async Task CrearSuscripcionAsync(Suscripcion suscripcion)
+        public void CrearSuscripcion(Suscripcion suscripcion)
         {
-            await _subscriptionRepository.AddAsync(suscripcion);
+            _subscriptionRepository.Add(suscripcion);
         }
 
-        public async Task ActualizarSuscripcionAsync(Suscripcion suscripcion)
+        public bool ActualizarSuscripcion(Suscripcion suscripcion)
         {
-            await _subscriptionRepository.UpdateAsync(suscripcion);
+            return _subscriptionRepository.Update(suscripcion);
         }
 
-        public async Task EliminarSuscripcionAsync(int id)
+        public bool EliminarSuscripcion(int id)
         {
-            await _subscriptionRepository.DeleteAsync(id);
+            return _subscriptionRepository.Delete(id);
         }
     }
 }

@@ -59,12 +59,11 @@ namespace Conversor_Monedas_Api.Services
         public bool UpdateCurrency(int id, MonedaDto currencyDto)
         {
             var existingCurrency = _currencyRepository.GetCurrencyById(id);
-            if (existingCurrency == null)
-            {
-                throw new KeyNotFoundException($"No se encontró una moneda con el ID {id}");
-            }
 
-            // Actualizamos solo los campos necesarios
+            if (existingCurrency == null)
+                return false;
+
+            // entidad = dto
             existingCurrency.Codigo = currencyDto.Code;
             existingCurrency.Leyenda = currencyDto.Legend;
             existingCurrency.Simbolo = currencyDto.Symbol;

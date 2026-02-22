@@ -1,7 +1,5 @@
 ﻿using Conversor_Monedas_Api.DTOs;
-using Conversor_Monedas_Api.Interfaces.repositories;
 using Conversor_Monedas_Api.Interfaces.services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversor_Monedas_Api.Controllers
@@ -17,7 +15,6 @@ namespace Conversor_Monedas_Api.Controllers
             _monedaService = monedaService;
         }
 
-        // Obtener todas las monedas
         [HttpGet("All")]
         public IActionResult GetAllCurrencies()
         {
@@ -25,7 +22,6 @@ namespace Conversor_Monedas_Api.Controllers
             return Ok(currencies);
         }
 
-        // Obtener moneda por Id
         [HttpGet("{id}")]
         public IActionResult GetCurrencyById(int id)
         {
@@ -37,7 +33,6 @@ namespace Conversor_Monedas_Api.Controllers
             return Ok(currency);
         }
 
-        // Crear una nueva moneda
         [HttpPost]
         public IActionResult AddCurrency([FromBody] MonedaDto monedaDto)
         {
@@ -47,10 +42,9 @@ namespace Conversor_Monedas_Api.Controllers
             }
 
             int currencyId = _monedaService.AddCurrency(monedaDto);
-            return CreatedAtAction(nameof(GetCurrencyById), new { id = currencyId, CurrencyId = currencyId });
+            return CreatedAtAction(nameof(GetCurrencyById), new { id = currencyId });//201
         }
 
-        // Actualizar una moneda existente
         [HttpPut("{id}")]
         public IActionResult UpdateCurrency(int id, [FromBody] MonedaDto currencyDto)
         {
@@ -72,11 +66,10 @@ namespace Conversor_Monedas_Api.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new { Message = ex.Message }); //atrapa cualq error y devuelve 400
             }
         }
 
-        // Eliminar una moneda (lógica de eliminación)
         [HttpDelete("{id}")]
         public IActionResult DeleteCurrency(int id)
         {

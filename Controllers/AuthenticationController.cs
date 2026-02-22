@@ -22,22 +22,20 @@ namespace Conversor_Monedas_Api.Controllers
         [HttpPost("login")]
         public IActionResult Authenticate([FromBody] AuthenticationDto credentials)
         {
-            // Paso 1: Validar las credenciales y generar el token
+            // Valida credenciales y generar el token
             var token = _userService.Authenticate(credentials);
 
             if (token == null)
             {
-                // Devuelve un error con el estado y mensaje según tu interfaz `ResLogin`
                 return Unauthorized(new LoginResponseDto
                 {
                     Status = "error",
                     Mensaje = "Credenciales incorrectas"
                 });
             }
+
             Console.WriteLine($"Token recibido: {token}");
-
-
-            // Paso 2: Retornar el token
+            // Retornar el token
             return Ok(new LoginResponseDto
             {
                 Status = "success",

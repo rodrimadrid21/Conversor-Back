@@ -2,7 +2,7 @@
 {
     public class MonedaDto
     {
-        public required int CurrencyId { get; set; }
+        public int CurrencyId { get; set; }
         public required string Code { get; set; } // ("ARS", "USDT", "BTC", "ETH", "LTC")
 
         public required string Legend { get; set; } // ("Pesos Argentinos")

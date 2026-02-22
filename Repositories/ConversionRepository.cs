@@ -15,27 +15,15 @@ namespace Conversor_Monedas_Api.Repositories
             _context = context;
         }
 
-        // Obtener índice por moneda (nombre raro, pero lo dejo como lo tenés)
-        public async Task<decimal> GetIdByCurrency(string codeCurrency)
-        {
-            var moneda = await _context.Moneda
-                .FirstOrDefaultAsync(m => m.Codigo == codeCurrency);
-
-            if (moneda == null)
-                throw new KeyNotFoundException($"La moneda con el código '{codeCurrency}' no fue encontrada.");
-
-            return moneda.IndiceConvertibilidad;
-        }
-
         // Obtener las conversiones de un usuario
         public List<Conversion> GetConversionsByUserId(int userId)
         {
             return _context.Conversion
                 .Where(c => c.UsuarioId == userId)
+                .OrderByDescending(c => c.FechaConversion)
                 .ToList();
         }
 
-        // Registrar una nueva conversión
         public int AddConversion(Conversion conversion)
         {
             _context.Conversion.Add(conversion);
@@ -43,14 +31,14 @@ namespace Conversor_Monedas_Api.Repositories
             return conversion.ConversionId;
         }
 
-        // Límite mensual: cuenta conversiones desde una fecha
+        // Límite: cuenta conversiones desde una fecha
         public int CountUserConversionsSince(int userId, DateTime fromDate)
         {
             return _context.Conversion
                 .Count(c => c.UsuarioId == userId && c.FechaConversion >= fromDate);
         }
 
-        // ✅ NUEVO: fecha más vieja dentro de la ventana (para calcular días restantes)
+        // Fecha más vieja dentro de la ventana (para calcular días restantes)
         public DateTime? GetOldestConversionDateSince(int userId, DateTime fromDate)
         {
             return _context.Conversion
