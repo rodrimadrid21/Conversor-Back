@@ -37,38 +37,36 @@ namespace Conversor_Monedas_Api.Controllers
                 var userId = _usuarioService.GetUserIdFromContext(User);
 
                 // 2) Ejecutar conversión
-                var result = _conversionService.ExecuteConversion(
+                var conversion = _conversionService.ExecuteConversion(
                     userId,
                     request.FromCurrency,
                     request.ToCurrency,
                     request.Amount
                 );
-
                 // 3) Traer historial actualizado
-                var conversions = _conversionService.GetUserConversions(userId);
+                var history = _conversionService.GetUserConversions(userId);
 
                 return Ok(new
                 {
-                    Conversion = result,
-                    History = conversions
+                    conversion,
+                    history
                 });
             }
             catch (UnauthorizedAccessException ex)
             {
                 // 401
-                return Unauthorized(new { Message = ex.Message });
+                return Unauthorized(new { message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
                 // 403- limite de conversiones
-                return StatusCode(StatusCodes.Status403Forbidden, new { Message = ex.Message });
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    Message = "Ocurrió un error al realizar la conversión.",
-                    Detail = ex.Message
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    new {
+                    message = "Ocurrió un error al realizar la conversión."
                 });
             }
         }

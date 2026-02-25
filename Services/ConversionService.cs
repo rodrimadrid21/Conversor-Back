@@ -77,8 +77,6 @@ namespace Conversor_Monedas_Api.Services
                 UsuarioId = c.UsuarioId,
                 FromCurrency = c.MonedaOrigen,
                 ToCurrency = c.MonedaDestino,
-                FromCurrencySymbol = _currencyRepository.GetCurrencyByCode(c.MonedaOrigen)?.Simbolo,
-                ToCurrencySymbol = _currencyRepository.GetCurrencyByCode(c.MonedaDestino)?.Simbolo,
                 Amount = c.MontoOriginal,
                 Result = c.MontoConvertido,
                 Date = c.FechaConversion
@@ -98,32 +96,21 @@ namespace Conversor_Monedas_Api.Services
             var desde = ahora.AddDays(-30); // los ultimos 30 días
 
             // cuantas hizo en los ult 30 dias
-            int usadasUltimos30 = _conversionRepository.CountUserConversionsSince(userId, desde); 
+            int usadasUltimos30 = _conversionRepository.CountUserConversionsSince(userId, desde);
 
-            if (limite != int.MaxValue && usadasUltimos30 >= limite) //valida si es pro y si ya usó todas las conversiones permitidas
+            if (limite != int.MaxValue && usadasUltimos30 >= limite) // valida si NO es ilimitado y ya usó todas
             {
                 // buscamos la conversión más vieja dentro de los últimos 30 días
                 var oldest = _conversionRepository.GetOldestConversionDateSince(userId, desde);
 
                 int diasRestantes = 0;
 
-                // Si existe una conversión dentro de los últimos 30 días,
-                // significa que podemos calcular cuándo se va a liberar el primer "cupo".
-                if (oldest.HasValue)
+                if (oldest is DateTime fecha) 
                 {
-                    // Cuando cumple 30 dias
-                    var resetAt = oldest.Value.AddDays(30);
-
-                    // Calculamos cuánto tiempo falta desde ahora
-                    var restante = resetAt - ahora;
-
-                    // restante.TotalDays puede dar: 3.4 días, 0.2 días, o incluso -1 día si ya pasó.
-                    // Math.Ceiling(...) redondea hacia arriba:
-                    //   0.2 días → mostramos 1 día
-                    //   3.1 días → mostramos 4 días
-                    //
-                    // Lo convertimos a int porque solo queremos mostrar días enteros.
-                    diasRestantes = (int)Math.Ceiling(Math.Max(0, restante.TotalDays));
+                    var fechaLiberacion = fecha.AddDays(30); // fecha en la que esa conversión "caduca"
+                    var tiempoRestante = fechaLiberacion - ahora; // tiempo que falta para que se libere un intento
+                    var dias = Math.Max(0, tiempoRestante.TotalDays); // si es negativo cambia a 0, sino puede mostrar decimales
+                    diasRestantes = (int)Math.Ceiling(dias); // redondeamos para arriba porque si falta 1 día y 2 horas, queremos mostrar "2 días"
                 }
 
                 // Si llegamos acá es porque el usuario alcanzó el límite.403

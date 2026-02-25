@@ -37,17 +37,20 @@ namespace Conversor_Monedas_Api.Services
 
             return GenerateJwtToken(user); //si esta validado genera el token y autentica al user
         }
-        public string GenerateJwtToken(Usuario user) // genera jwt , claims, firma para ser enviado al front
+        public string GenerateJwtToken(Usuario user)
         {
-            // 1) Leer la clave secreta desde la configuración y convertirla a bytes UTF-8
-            var keyBytes = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
-            // 2) Crear clave de seguridad simétrica (envoltorio) a partir de esos bytes
-            var securityKey = new SymmetricSecurityKey(keyBytes);
-            // 3) Configurar las credenciales de firma con el algoritmo HMAC-SHA256 - define como firmar
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            // genera la firma del token y para validar dicha firma posteriormente.
+            // 1) Definir la clave secreta y el algoritmo de firma para el token
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])
+            );
 
-            // 4.1) inicialización de colección de las reclamaciones (claims) del token - crea los datos del user (userId, nameS, subscriptiontype)
+            // 2) Crear las credenciales de firma utilizando la clave secreta y el algoritmo HMAC-SHA256
+            var credentials = new SigningCredentials(
+                key,
+                SecurityAlgorithms.HmacSha256
+            );
+
+            // 3.1) inicialización de colección de las reclamaciones (claims) del token - crea los datos del user (userId, nameS, subscriptiontype)
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),     // "sub.ject => userId"
@@ -55,8 +58,8 @@ namespace Conversor_Monedas_Api.Services
                 new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),    
                 new Claim("subscriptionType", user.Type.ToString()),                // reclamación personalizada para incluir el tipo de suscripción.
             };
-            // 4.2) contstruccion del token. 
-            var jwtToken = new JwtSecurityToken(
+            // 3.2) contstruccion del token. 
+            var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,                             //1. se agrega las claims personalizada
@@ -65,28 +68,19 @@ namespace Conversor_Monedas_Api.Services
                 signingCredentials: credentials//2. y se agrega las credenciales de firma para que el token quede firmado con la clave secreta y el algoritmo HMAC-SHA256.
             );
 
-            // 5) Convertir el token a string para enviarlo al cliente. 
-            return new JwtSecurityTokenHandler().WriteToken(jwtToken); // El handler se encarga de serializar el token con su header, payload y firma.
+            // 4) Convertir el token a string para enviarlo al cliente. 
+            return new JwtSecurityTokenHandler().WriteToken(token); // El handler se encarga de serializar el token con su header, payload y firma.
         }
 
         // obtiene el id del usuario auth para activar el plan ⬇
-        public int GetUserIdFromContext(ClaimsPrincipal user) //claimsprincipal: representa al usuario autenticado y contiene sus claims cargados por el middleware JWT
+        public int GetUserIdFromContext(ClaimsPrincipal user)
         {
-            // Intentar con "sub" estándar de JWT y con NameIdentifier por si algún mapeo se mete - "proba con este, sino funciona con el siguiente y sino con el siguiente (?? ?? sub)"
-            var userIdClaim =
-                user?.FindFirst(JwtRegisteredClaimNames.Sub) ??          // "sub"
-                user?.FindFirst(ClaimTypes.NameIdentifier) ??            // por si ASP.NET mapea "sub" a "nameidentifier"
-                user?.FindFirst("sub");                                  // fallback literal
+            var claim = user?.FindFirst(JwtRegisteredClaimNames.Sub);
 
-            if (userIdClaim != null)
-            {
-                Console.WriteLine($"[GetUserIdFromContext] UserId desde claims: {userIdClaim.Value}");
-                // Convierte el valor a int y lo devuelve
-                return int.Parse(userIdClaim.Value);
-            }
+            if (claim == null)
+                throw new UnauthorizedAccessException("Usuario no autenticado.");
 
-            Console.WriteLine("[GetUserIdFromContext] No se encontró el claim de usuario (sub / nameidentifier)");
-            throw new UnauthorizedAccessException("Usuario no autenticado.");
+            return int.Parse(claim.Value); // Si existe, lo convierto a int y lo devuelvo.
         }
 
         public List<UsuarioDto> GetAllUsers()
