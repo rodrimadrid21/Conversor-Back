@@ -7,7 +7,7 @@ namespace Conversor_Monedas_Api.Entities
     public class Usuario
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Generación automática del Id
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Id automatico
         public int UserId { get; set; }
 
         [StringLength(20)]

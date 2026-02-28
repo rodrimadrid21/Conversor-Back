@@ -38,10 +38,8 @@ namespace Conversor_Monedas_Api.Controllers
 
             try
             {
-                // Llama al servicio para registrar al usuario
                 _userService.RegisterUser(userDto);
 
-                // Retorna mensaje de éxito
                 return Ok(new RegisterResponseDto { Mensaje = "Registro exitoso." });
             }
             catch (ArgumentException ex)
@@ -50,7 +48,6 @@ namespace Conversor_Monedas_Api.Controllers
             }
         }
 
-        // Obtener usuario por ID
         [HttpGet("{id}")]
         public IActionResult GetUserById(int id)
         {
@@ -62,7 +59,6 @@ namespace Conversor_Monedas_Api.Controllers
             return Ok(user);
         }
 
-        // Obtener usuario por username
         [HttpGet("ByUsername/{username}")]
         public IActionResult GetUserByUsername(string username)
         {
@@ -74,7 +70,6 @@ namespace Conversor_Monedas_Api.Controllers
             return Ok(user);
         }
 
-        // Actualizar usuario
         [HttpPut]
         public IActionResult UpdateUser([FromBody] UsuarioDto userDto)
         {
@@ -93,7 +88,6 @@ namespace Conversor_Monedas_Api.Controllers
             }
         }
 
-        // delete del usuario
         [HttpDelete("{userId}")]
         public IActionResult DeleteUser(int userId)
         {
@@ -105,19 +99,15 @@ namespace Conversor_Monedas_Api.Controllers
             return Ok(new { Message = "Usuario eliminado lógicamente." });
         }
 
-        // Actualizar la suscripción del usuario
         [HttpPost("activar-plan")]
         public IActionResult ActivarPlan([FromBody] SuscripcionDto dto)
         {
             try
             {
-                // 1) HttpContext.User representa al usuario autenticado por el middleware JWT.
-                //    Si el request trae un header "Authorization: Bearer <token>", el middleware valida el token y carga sus claims en HttpContext.User.
-              
+                // 1) HttpContext.User representa al usuario autenticado por el middleware JWT.              
                 int userId = _userService.GetUserIdFromContext(HttpContext.User);
 
-                // 2) Con ese userId (del token) y el plan pedido (dto.Type),
-                //    llamamos a la lógica de negocio (service) para actualizar el plan del usuario. Y el service delega al repository, que actualiza la BD (SQLite) y hace SaveChanges().
+                // 2) llamamos al servicio con ese usuario y el nuevo tipo
                 bool updated = _userService.UpdateUserSubscription(userId, dto.Type);
 
                 if (!updated)

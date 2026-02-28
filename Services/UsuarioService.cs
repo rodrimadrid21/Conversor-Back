@@ -35,44 +35,43 @@ namespace Conversor_Monedas_Api.Services
                 return null;
             }
 
-            return GenerateJwtToken(user); //si esta validado genera el token y autentica al user
+            return GenerateJwtToken(user);
         }
         public string GenerateJwtToken(Usuario user)
         {
-            // 1) Definir la clave secreta y el algoritmo de firma para el token
+            // Define la clave secreta y el algoritmo de firma
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])
             );
 
-            // 2) Crear las credenciales de firma utilizando la clave secreta y el algoritmo HMAC-SHA256
+            // 2) Crear credenciales utilizando la clave secreta y el algoritmo
             var credentials = new SigningCredentials(
                 key,
                 SecurityAlgorithms.HmacSha256
             );
 
-            // 3.1) inicialización de colección de las reclamaciones (claims) del token - crea los datos del user (userId, nameS, subscriptiontype)
+            // * crea los datos del user (userId, nameS, subscriptiontype)
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),     // "sub.ject => userId"
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),     // "sub => userId"
                 new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName ?? ""),     
                 new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName ?? ""),    
-                new Claim("subscriptionType", user.Type.ToString()),                // reclamación personalizada para incluir el tipo de suscripción.
+                new Claim("subscriptionType", user.Type.ToString())
             };
-            // 3.2) contstruccion del token. 
+            // 3) contstruccion del token. 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
-                claims: claims,                             //1. se agrega las claims personalizada
+                claims: claims,                             //*
                 notBefore: DateTime.UtcNow,
                 expires: DateTime.UtcNow.AddHours(1),
-                signingCredentials: credentials//2. y se agrega las credenciales de firma para que el token quede firmado con la clave secreta y el algoritmo HMAC-SHA256.
+                signingCredentials: credentials
             );
 
             // 4) Convertir el token a string para enviarlo al cliente. 
-            return new JwtSecurityTokenHandler().WriteToken(token); // El handler se encarga de serializar el token con su header, payload y firma.
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // obtiene el id del usuario auth para activar el plan ⬇
         public int GetUserIdFromContext(ClaimsPrincipal user)
         {
             var claim = user?.FindFirst(JwtRegisteredClaimNames.Sub);
@@ -80,13 +79,13 @@ namespace Conversor_Monedas_Api.Services
             if (claim == null)
                 throw new UnauthorizedAccessException("Usuario no autenticado.");
 
-            return int.Parse(claim.Value); // Si existe, lo convierto a int y lo devuelvo.
+            return int.Parse(claim.Value); //convierte a int y lo devuelve
         }
 
         public List<UsuarioDto> GetAllUsers()
         {
             var users = _repository.GetAllUsers();
-            return users.Select(u => new UsuarioDto // mapea cada Usuario a UsuarioDto - para cada usuario "u", se crea un dto
+            return users.Select(u => new UsuarioDto
             {
                 UserId = u.UserId,
                 UserName = u.UserName,
@@ -100,14 +99,12 @@ namespace Conversor_Monedas_Api.Services
 
         public int RegisterUser(UsuarioDto userDto)
         {
-            // Verif si el usuario existe
             var user = _repository.GetUserByUsername(userDto.UserName);
             if (user != null)
             {
                 throw new ArgumentException("El nombre de usuario ya está en uso.");
             }
 
-            // Crear el nuevo usuario a partir del DTO y asignarle la suscripción Free
             var newUser = new Usuario
             {
                 UserName = userDto.UserName,
@@ -116,7 +113,6 @@ namespace Conversor_Monedas_Api.Services
                 LastName = userDto.LastName
             };
 
-            // Guardar el usuario en el repositorio
             return _repository.AddUser(newUser);
         }
 

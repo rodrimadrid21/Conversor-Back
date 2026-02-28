@@ -33,17 +33,16 @@ namespace Conversor_Monedas_Api.Controllers
 
             try
             {
-                // 1) UserId desde el token
+                // UserId desde el token
                 var userId = _usuarioService.GetUserIdFromContext(User);
 
-                // 2) Ejecutar conversión
                 var conversion = _conversionService.ExecuteConversion(
                     userId,
                     request.FromCurrency,
                     request.ToCurrency,
                     request.Amount
                 );
-                // 3) Traer historial actualizado
+                // historial actualizado
                 var history = _conversionService.GetUserConversions(userId);
 
                 return Ok(new
@@ -54,12 +53,10 @@ namespace Conversor_Monedas_Api.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                // 401
                 return Unauthorized(new { message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
-                // 403- limite de conversiones
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
             }
             catch (Exception)

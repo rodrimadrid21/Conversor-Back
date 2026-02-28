@@ -3,11 +3,11 @@
     public class MonedaDto
     {
         public int CurrencyId { get; set; }
-        public required string Code { get; set; } // ("ARS", "USDT", "BTC", "ETH", "LTC")
+        public required string Code { get; set; } 
 
-        public required string Legend { get; set; } // ("Pesos Argentinos")
+        public required string Legend { get; set; } 
 
-        public required string Symbol { get; set; } // ("$", "₮", "₿", "Ξ", "Ł")
+        public required string Symbol { get; set; } 
 
         public required decimal ConvertibilityIndex { get; set; } 
     }

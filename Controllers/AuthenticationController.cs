@@ -22,7 +22,6 @@ namespace Conversor_Monedas_Api.Controllers
         [HttpPost("login")]
         public IActionResult Authenticate([FromBody] AuthenticationDto credentials)
         {
-            // Valida credenciales y generar el token
             var token = _userService.Authenticate(credentials);
 
             if (token == null)

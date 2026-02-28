@@ -66,7 +66,7 @@ namespace Conversor_Monedas_Api.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message }); //atrapa cualq error y devuelve 400
+                return BadRequest(new { Message = ex.Message });
             }
         }
 

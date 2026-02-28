@@ -15,10 +15,8 @@ namespace Conversor_Monedas_Api.Entities
         [Required]
         public int UsuarioId { get; set; }
 
-        // Esta propiedad permite acceder al Usuario completo
-        // EF Core entiende que UsuarioId es la Foreign Key
         [ForeignKey("UsuarioId")]
-        public required virtual Usuario Usuario { get; set; }
+        public required Usuario Usuario { get; set; } 
 
         // ---
 

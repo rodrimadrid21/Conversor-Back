@@ -63,7 +63,7 @@ namespace Conversor_Monedas_Api.Services
             if (existingCurrency == null)
                 return false;
 
-            // entidad = dto
+            // entidad <= dto
             existingCurrency.Codigo = currencyDto.Code;
             existingCurrency.Leyenda = currencyDto.Legend;
             existingCurrency.Simbolo = currencyDto.Symbol;

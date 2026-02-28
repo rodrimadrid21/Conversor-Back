@@ -15,7 +15,6 @@ namespace Conversor_Monedas_Api.Repositories
             _context = context;
         }
 
-        // Obtener las conversiones de un usuario
         public List<Conversion> GetConversionsByUserId(int userId)
         {
             return _context.Conversion
@@ -31,14 +30,13 @@ namespace Conversor_Monedas_Api.Repositories
             return conversion.ConversionId;
         }
 
-        // Límite: cuenta conversiones desde una fecha
         public int CountUserConversionsSince(int userId, DateTime fromDate)
         {
             return _context.Conversion
                 .Count(c => c.UsuarioId == userId && c.FechaConversion >= fromDate);
         }
 
-        // Fecha más vieja dentro de la ventana (para calcular días restantes)
+        // la mas vieja
         public DateTime? GetOldestConversionDateSince(int userId, DateTime fromDate)
         {
             return _context.Conversion

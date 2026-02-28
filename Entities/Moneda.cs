@@ -11,15 +11,15 @@ namespace Conversor_Monedas_Api.Entities
 
         [StringLength(10)]
         [Required]
-        public required string Codigo { get; set; }  // ("ARS", "USDT", "BTC", "ETH", "LTC")
+        public required string Codigo { get; set; } 
 
         [StringLength(100)]
         [Required]
-        public required string Leyenda { get; set; }  // ("Pesos Argentinos")
+        public required string Leyenda { get; set; } 
 
         [StringLength(10)]
         [Required]
-        public required string Simbolo { get; set; }  // ("$", "₮", "₿", "Ξ", "Ł")
+        public required string Simbolo { get; set; } 
 
         [Required]
         public decimal IndiceConvertibilidad { get; set; }  // Relación con el dólar (Ej. 0.002 para ARS)

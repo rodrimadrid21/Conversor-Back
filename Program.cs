@@ -3,18 +3,17 @@ using Conversor_Monedas_Api.Interfaces.repositories;
 using Conversor_Monedas_Api.Interfaces.services;
 using Conversor_Monedas_Api.Repositories;
 using Conversor_Monedas_Api.Services;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
-using System.Text;              // Encoding
+using System.Text;              
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// CORS (Angular)
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -27,13 +26,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>//addDbContext registra DbContext como scooped
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repositorios
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IMonedaRepository, MonedaRepository>();
 builder.Services.AddScoped<IConversionRepository, ConversionRepository>();
 builder.Services.AddScoped<ISuscripcionRepository, SuscripcionRepository>();
 
-// Servicios
 builder.Services.AddScoped<IConversionService, ConversionService>();
 builder.Services.AddScoped<IMonedaService, MonedaService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
@@ -44,34 +41,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)//defi
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;//evita q .net remapee claims
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuerSigningKey = true,//exige firma valida
-            IssuerSigningKey = new SymmetricSecurityKey(
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey //simetrica
+            (
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
 
-            // - seguridad, cualquier iss y aud
+            // seteamos en false
             ValidateIssuer = false,
             ValidateAudience = false,
-
-            ClockSkew = TimeSpan.Zero
         };
     });
 
-// habilita autorizacion
+// autorizacion
 builder.Services.AddAuthorization();
-
 // Controllers (con Authorize global)
 builder.Services.AddControllers(options =>
 {
-    options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter());
+    options.Filters.Add(new AuthorizeFilter());
 });
-
-// permite que swagger reconozca los endpoints
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger + Bearer (agrega el boton Authorize en swagger)
+// Swagger + Bearer (boton Authorize)
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { 
@@ -102,19 +94,14 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-//construye el host y la app
+
 var app = builder.Build();
 
 //pipeline de middlewares
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Conversor de Monedas API v1");
-    });
-}
+app.UseDeveloperExceptionPage();
+app.UseSwagger();
+app.UseSwaggerUI();
+
 
 //middlewares
 app.UseHttpsRedirection();//redirige http a https
@@ -126,4 +113,4 @@ app.UseAuthorization();
 
 app.MapControllers();//mapea rutas a controllers
 
-app.Run();//inicia la app
+app.Run();
